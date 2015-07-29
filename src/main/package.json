@@ -1,0 +1,17 @@
+{
+  "name": "electric-huxley-worker",
+  "version": "0.0.1",
+  "description": "The part of electric-huxley that runs in electron's main thread",
+  "main": "main.js",
+  "scripts": {},
+  "keywords": [
+    "electron",
+    "screenshot"
+  ],
+  "author": "Stripe",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {
+    "axon": "^2.0.2"
+  }
+}
