@@ -1,6 +1,6 @@
 /**
- * src/lib/browser.js -- Controls an electron browser
- * 
+ * src/lib/browser.js -- Controls an electron browser. This file runs in node.
+ *
  * This code is based on electron-screenshot-service by FWeinb.
  * https://github.com/FWeinb/electron-screenshot-service
  *
@@ -8,16 +8,22 @@
  * (C) Stripe 2015
  */
 
-'use strict';
+/* eslint-env node */
 
-var path = require('path');
+"use strict";
 
-var axon = require('axon');
-var spawn = require('win-spawn');
-var Promise = require('bluebird');
+var Promise = require("bluebird");
+// axon is a socket library that lets us talk to an electron-prebuilt process we'll spin up
+var axon = require("axon");
+// the 'require' part of the electron-prebuild npm module is just the path to the included executable
+var electronPath = require("electron-prebuilt");
+var path = require("path");
+var spawn = require("child_process").spawn;
 
-var electronpath = require('electron-prebuilt');
-var app = path.join(__dirname, '../', 'main');
+// This is a path to the main folder of the electron application
+var electronAppFolder = path.join(__dirname, "../", "main");
+
+/* ---- THE BROWSER CLASS -------------------------------------------------------------*/
 
 var Browser = function (sock) {
   this.sock = sock;
@@ -28,12 +34,13 @@ var Browser = function (sock) {
  * @param options.screenshotPrefix string screenshots are written to ${screenshotPrefix}${idx}.png
  * @param options.testURL string the URL to load. Only the body is loaded. For changes to the header, create a new Browser
  * @param options.screenSize [x,y] an array with X and Y dimensions for the viewport. The rendered size will be the greater
- *                           of the screen size and the document size, so you'll never get scrollbars.
+ *                           of the screen size and the document size, so you'll never get scrollbars (unless the website gets taller beacuse
+ *                           of a resize).
  */
 Browser.prototype.runTask = function(options) {
   var deferred = Promise.pending();
 
-  this.sock.send('run-task', options, function(error) {
+  this.sock.send("run-task", options, function(error) {
     if (error) {
       deferred.reject(error);
       return;
@@ -51,7 +58,7 @@ Browser.prototype.runTask = function(options) {
 Browser.prototype.sync = function() {
   var deferred = Promise.pending();
 
-  this.sock.send('sync', null, function(error) {
+  this.sock.send("sync", null, function(error) {
     if (error) {
       deferred.reject(error);
       return;
@@ -61,10 +68,17 @@ Browser.prototype.sync = function() {
   });
 
   return deferred.promise;
-}
+};
 
+/* ---- THE BROWSER LIFECYCLE METHODS -------------------------------------------------*/
+
+// A promise which resolves when the browser has launched.
 var isStarted;
+
+// An axon socket for communicating with the browser.
 var sock;
+
+// The child process.
 var child;
 
 /**
@@ -73,11 +87,11 @@ var child;
  * @param chromeURL string a URL with a blank body. The body from other tests will be injected into this page.
  */
 var createBrowser = function (chromeURL) {
-  sock = axon.socket('req');
+  sock = axon.socket("req");
 
   isStarted = new Promise(function (resolve, reject) {
-    sock.on('connect', function () {
-      sock.send('set-chrome-url', chromeURL, function (error) {
+    sock.on("connect", function () {
+      sock.send("set-chrome-url", chromeURL, function (error) {
         if (error) {
           reject(error);
         }
@@ -86,28 +100,36 @@ var createBrowser = function (chromeURL) {
       });
     });
 
-    sock.on('error', function (error) {
-      reject({type: 'socket', error: error});
+    sock.on("error", function (error) {
+      reject({type: "socket", error: error});
     });
 
     // Start the server on a free port
-    sock.bind(undefined, 'localhost', function () {
+    sock.bind(undefined, "localhost", function () {
       process.env.PORT = sock.server.address().port;
-      child = spawn(electronpath, [
-        '../main/'
+      child = spawn(electronPath, [
+        electronAppFolder
       ],
       {
-        cwd: app,
+        cwd: electronAppFolder
       });
-      child.stdout.on('data', function(data) {
-        console.log(data.toString().split('\n').map(function(line) { return '[electron] ' + line; }).filter(function(line) { return line}).join('\n'));
+      child.stdout.on("data", function(data) {
+        console.log(data.toString().
+          split("\n").
+          map(function(line) {
+            return "[electron] " + line;
+          }).join("\n"));
       });
-      child.stderr.on('data', function(data) {
-        console.warn(data.toString().split('\n').map(function(line) { return '[electron] ' + line; }).filter(function(line) { return line}).join('\n'));
+      child.stderr.on("data", function(data) {
+        console.warn(data.toString().
+          split("\n").
+          map(function(line) {
+            return "[electron] " + line;
+          }).join("\n"));
       });
 
-      child.on('exit', function (error) {
-        reject({type: 'electron', path: electronpath, error: error});
+      child.on("exit", function (error) {
+        reject({type: "electron", path: electronPath, error: error});
       });
     });
   });
@@ -116,13 +138,21 @@ var createBrowser = function (chromeURL) {
 };
 
 module.exports = {
+  /**
+   * Creates a browser that opens to chromeURL.
+   *
+   * @param chromeURL string the path of the page with all test resources
+   */
   createBrowser: function (chromeURL) {
     if (isStarted) {
-      throw new Error('Close the current browser before creating a new one.');
+      throw new Error("Close the current browser before creating a new one.");
     }
     return createBrowser(chromeURL);
   },
 
+  /**
+   * Closes the browser.
+   */
   close: function () {
     isStarted = undefined;
     if (sock) {
