@@ -7,7 +7,7 @@ It aims to complement [node-huxley](https://github.com/chenglou/node-huxley). It
 makes different trade-offs:
  - it's really fast (a pull request with benchmarks is welcome)
  - it only supports a single target (electron, which renders like Chrome)
- - it only supports static pages (i.e., without JavaScript). If you're goal is to test CSS components, or server
+ - it only supports static pages (i.e., without JavaScript). If your goal is to test CSS components, or server
  rendered React components, this may suit your needs.
  - it expects all pages to have the same `<head>`
 
