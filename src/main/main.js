@@ -78,7 +78,7 @@ app.on("ready", function () {
           throw new Error("Electron crashed");
         });
 
-        popupWindow.webContents.on("did-finish-load", function () {
+        ipc.on('did-finish-load', function() {
           popupWindow.webContents.send("ensure-rendered", loadEvent);
         });
 

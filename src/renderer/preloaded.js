@@ -89,4 +89,6 @@
         });
     }
   });
+
+  ipc.send('did-finish-load');
 }());
