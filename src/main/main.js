@@ -22,8 +22,10 @@ var sock = require("axon").socket("rep");
 var currentOptions;
 
 sock.connect(parseInt(process.env.PORT, 10));
+console.log("Starting", process.env.PORT);
 
 app.on("ready", function () {
+  console.log("Ready");
   var popupWindow;
 
   var loadNext;
@@ -33,6 +35,7 @@ app.on("ready", function () {
   var sizeEvent = null;
 
   sock.on("message", function (task, options, reply) {
+    console.log("Msg", task, options, reply);
     switch (task) {
       case "set-chrome-url":
         var chromeLoaded = false;
@@ -79,14 +82,17 @@ app.on("ready", function () {
         });
 
         popupWindow.webContents.on("did-finish-load", function () {
+          console.log("finished load. ensuring rendered");
           popupWindow.webContents.send("ensure-rendered", loadEvent);
         });
 
         ipc.on("close", function() {
+          console.log("close event");
           app.quit();
         });
 
         ipc.on(loadEvent, function () {
+          console.log("load event");
           var outputPath = currentOptions && currentOptions.screenshotPrefix + "1.png";
           var cb = function (data, err) {
             if (data.isEmpty()) {
@@ -118,6 +124,7 @@ app.on("ready", function () {
         });
 
         ipc.on(sizeEvent, function (e, data) {
+          console.log("size event");
           var size = popupWindow.getSize();
           if (size[0] !== data.width || size[1] !== data.height) {
             console.log("This test does not fit in the viewport. Expanding to " + data.width + "x" + data.height);
@@ -137,6 +144,7 @@ app.on("ready", function () {
         break;
 
       case "run-task":
+        console.log("run task");
         popupWindow.webContents.executeJavaScript(
           "window.swidth = \"" + options.screenSize[0] + "\";" +
           "window.sheight = \"" + options.screenSize[1] + "\";"
@@ -150,6 +158,7 @@ app.on("ready", function () {
         popupWindow.webContents.send("next-screenshot", options);
         break;
       case "sync":
+        console.log("sync");
         if (!activeTasks) {
           reply();
         } else {
@@ -160,6 +169,7 @@ app.on("ready", function () {
   });
 
   sock.on("close", function () {
+    console.log("sock close");
     app.terminate();
     app.quit();
   });
