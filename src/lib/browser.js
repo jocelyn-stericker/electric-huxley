@@ -105,7 +105,7 @@ var createBrowser = function (chromeURL) {
     });
 
     // Start the server on a free port
-    sock.bind(undefined, "localhost", function () {
+    sock.bind(0, "localhost", function () {
       process.env.PORT = sock.server.address().port;
       child = spawn(electronPath, [
         electronAppFolder

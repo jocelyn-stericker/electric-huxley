@@ -90,5 +90,5 @@
     }
   });
 
-  ipc.send('did-finish-load');
+  ipc.send("did-finish-load");
 }());
