@@ -1,6 +1,6 @@
 {
   "name": "electric-huxley",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Codeless front-end testing with an emphasis on speed",
   "main": "src/lib/index.js",
   "scripts": {
